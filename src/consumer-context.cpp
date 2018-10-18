@@ -25,10 +25,9 @@
 
 namespace ndn {
 
-Consumer::Consumer(Name prefix, Name functionAsName, int protocol)
+Consumer::Consumer(Name prefix, int protocol)
   : m_isRunning(false)
   , m_prefix(prefix)
-  , m_functionAsName(functionAsName)
   , m_interestLifetimeMillisec(DEFAULT_INTEREST_LIFETIME_API)
   , m_minWindowSize(DEFAULT_MIN_WINDOW_SIZE)
   , m_maxWindowSize(DEFAULT_MAX_WINDOW_SIZE)

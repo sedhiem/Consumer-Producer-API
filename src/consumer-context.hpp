@@ -53,7 +53,7 @@ public:
    *        that can be retrieved from the network.
    * @param protocol - 1) SDR 2) UDR 3) RDR
    */
-  explicit Consumer(const Name prefix, Name functionAsName, int protocol);
+  explicit Consumer(const Name prefix, int protocol);
 
   /**
    * @brief Stops the ongoing fetching of the Application Data Unit (ADU) and releases all

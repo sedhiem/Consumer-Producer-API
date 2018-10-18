@@ -26,9 +26,8 @@
 
 namespace ndn {
 
-Producer::Producer(Name prefix, Name functionAsName)
+Producer::Producer(Name prefix)
   : m_prefix(prefix)
-  , m_functionAsName(functionAsName)
   , m_dataPacketSize(DEFAULT_DATA_PACKET_SIZE)
   , m_dataFreshness(DEFAULT_DATA_FRESHNESS)
   , m_registrationStatus(REGISTRATION_NOT_ATTEMPTED)
@@ -224,6 +223,34 @@ Producer::produce(Data& packet)
   }
 }
 
+int
+Producer::getFinalBlockIdFromBufferSize(Name suffix, size_t bufferSize)
+{
+  if (bufferSize == 0)
+    return 0;
+
+  int bytesPackaged = 0;
+
+  Name name(m_prefix);
+  if (!suffix.empty()) {
+    name.append(suffix);
+  }
+
+  Block nameOnWire = name.wireEncode();
+  size_t bytesOccupiedByName = nameOnWire.size();
+
+  int signatureSize = 32; //SHA_256 as default
+
+  int freeSpaceForContent = m_dataPacketSize - bytesOccupiedByName - signatureSize - m_keyLocatorSize - DEFAULT_SAFETY_OFFSET;
+  int numberOfSegments = bufferSize / freeSpaceForContent;
+  if (numberOfSegments == 0)
+    numberOfSegments++;
+
+  if (freeSpaceForContent * numberOfSegments < bufferSize)
+    numberOfSegments++;
+
+  return numberOfSegments;
+}
 // this can be called either from the thread of the caller
 // or from the m_listeningThread
 void

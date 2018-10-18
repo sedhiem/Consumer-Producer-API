@@ -373,7 +373,7 @@ ReliableDataRetrieval::retransmitFreshInterest(const ndn::Interest& interest)
       int interestLifetime = DEFAULT_INTEREST_LIFETIME_API;
       m_context->getContextOption(INTEREST_LIFETIME, interestLifetime);
       retxInterest.setInterestLifetime(time::milliseconds(interestLifetime));
-
+      retxInterest.setFunction(interest.getFunction());
       SelectorHelper::applySelectors(retxInterest, m_context);
 
       retxInterest.setMustBeFresh(true); // to bypass cache
@@ -759,6 +759,7 @@ ReliableDataRetrieval::onTimeout(const ndn::Interest& interest)
     int interestLifetime = DEFAULT_INTEREST_LIFETIME_API;
     m_context->getContextOption(INTEREST_LIFETIME, interestLifetime);
     retxInterest.setInterestLifetime(time::milliseconds(interestLifetime));
+    retxInterest.setFunction(interest.getFunction());
 
     SelectorHelper::applySelectors(retxInterest, m_context);
 

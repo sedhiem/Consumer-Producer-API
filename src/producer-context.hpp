@@ -64,7 +64,7 @@ public:
    * @param prefix Name components that identify the namespace
    *        where all generated Data packets will be placed.
    */
-  explicit Producer(Name prefix, Name functionAsName);
+  explicit Producer(Name prefix);
 
   /**
    * @brief Detaches producer context from the network and releases all associated system resources.
@@ -93,6 +93,9 @@ public:
    */
   void
   produce(Name suffix, const uint8_t* buffer, size_t bufferSize);
+
+  int
+  getFinalBlockIdFromBufferSize(Name suffix, size_t bufferSize);
 
   void
   produce(Data& packet);
