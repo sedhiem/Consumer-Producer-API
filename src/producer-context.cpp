@@ -224,32 +224,31 @@ Producer::produce(Data& packet)
 }
 
 int
-Producer::getFinalBlockIdFromBufferSize(Name suffix, size_t bufferSize)
+Producer::getFinalBlockIdFromBufferSize(Name contentName, size_t bufferSize)
 {
   if (bufferSize == 0)
     return 0;
 
   int bytesPackaged = 0;
 
-  Name name(m_prefix);
-  if (!suffix.empty()) {
-    name.append(suffix);
-  }
-
+  Name name = contentName;
   Block nameOnWire = name.wireEncode();
   size_t bytesOccupiedByName = nameOnWire.size();
 
   int signatureSize = 32; //SHA_256 as default
 
   int freeSpaceForContent = m_dataPacketSize - bytesOccupiedByName - signatureSize - m_keyLocatorSize - DEFAULT_SAFETY_OFFSET;
+
+
   int numberOfSegments = bufferSize / freeSpaceForContent;
+
   if (numberOfSegments == 0)
     numberOfSegments++;
 
   if (freeSpaceForContent * numberOfSegments < bufferSize)
     numberOfSegments++;
 
-  return numberOfSegments;
+  return numberOfSegments-1;
 }
 // this can be called either from the thread of the caller
 // or from the m_listeningThread
@@ -280,7 +279,7 @@ Producer::produce(Name suffix, const uint8_t* buf, size_t bufferSize)
 
   if (freeSpaceForContent * numberOfSegments < bufferSize)
     numberOfSegments++;
-
+    
   uint64_t currentSegment = 0;
   uint64_t initialSegment = currentSegment;
   uint64_t finalSegment = currentSegment;

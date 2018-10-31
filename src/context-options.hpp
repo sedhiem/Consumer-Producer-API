@@ -53,6 +53,7 @@
 #define INFOMAX_UPDATE_INTERVAL 26 // int (milliseconds)
 
 #define FUNCTION 28 //define Function as Name
+#define FINAL_BLOCK_ID 29 //FinalBlockId
 
 // selectors
 #define MIN_SUFFIX_COMP_S 101 // int

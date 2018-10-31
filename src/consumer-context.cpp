@@ -280,6 +280,10 @@ Consumer::setContextOption(int optionName, size_t optionValue)
       m_sendBufferSize = optionValue;
       return OPTION_VALUE_SET;
 
+    case FINAL_BLOCK_ID:
+      m_finalBlockId = optionValue;
+      return OPTION_VALUE_SET;
+
     default:
       return OPTION_VALUE_NOT_SET;
   }
@@ -546,6 +550,10 @@ Consumer::getContextOption(int optionName, size_t& optionValue)
 
     case SND_BUF_SIZE:
       optionValue = m_sendBufferSize;
+      return OPTION_FOUND;
+
+    case FINAL_BLOCK_ID:
+      optionValue = m_finalBlockId;
       return OPTION_FOUND;
 
     default:

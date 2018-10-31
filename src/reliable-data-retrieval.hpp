@@ -67,7 +67,7 @@ public:
 
   void
   stop();
-
+  
 private:
   void
   sendInterest();

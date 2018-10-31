@@ -95,6 +95,7 @@ public:
    * Context option setters
    * Return OPTION_VALUE_SET if success; otherwise -- OPTION_VALUE_NOT_SET
    */
+
   int
   setContextOption(int optionName, int optionValue);
 
@@ -141,6 +142,7 @@ public:
    * Context option getters
    * Return OPTION_FOUND if success; otherwise -- OPTION_NOT_FOUND
    */
+
   int
   getContextOption(int optionName, int& optionValue);
 
@@ -214,6 +216,7 @@ private:
 
   int m_interestLifetimeMillisec;
 
+  uint64_t m_finalBlockId;
   int m_minWindowSize;
   int m_maxWindowSize;
   int m_currentWindowSize;

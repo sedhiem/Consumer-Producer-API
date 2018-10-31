@@ -101,7 +101,31 @@ ReliableDataRetrieval::start()
   }*/
 
   //send exactly 1 Interest to get the FinalBlockId
-  sendInterest();
+  m_context->getContextOption(FINAL_BLOCK_ID, m_finalBlockNumber);
+  m_currentWindowSize = m_finalBlockNumber;
+  int maxWindowSize = -1;
+  m_context->getContextOption(MAX_WINDOW_SIZE, maxWindowSize);
+
+  // if there are too many Interests to send, put an upper boundary on it.
+  if (m_currentWindowSize > maxWindowSize) {
+    m_currentWindowSize = maxWindowSize;
+  }
+
+  if (m_isRunning) {
+    while (m_interestsInFlight <= m_currentWindowSize) {
+      if (m_isFinalBlockNumberDiscovered) {
+        if (m_segNumber <= m_finalBlockNumber) {
+          sendInterest();
+        }
+        else {
+          break;
+        }
+      }
+      else {
+        sendInterest();
+      }
+    }
+  }
 
   bool isAsync = false;
   m_context->getContextOption(ASYNC_MODE, isAsync);
@@ -134,6 +158,7 @@ ReliableDataRetrieval::sendInterest()
   prefix.appendSegment(m_segNumber);
 
   Interest interest(prefix);
+  std::cout << "Sending Interest" << interest.getName() << std::endl;
 
   int interestLifetime = DEFAULT_INTEREST_LIFETIME_API;
   m_context->getContextOption(INTEREST_LIFETIME, interestLifetime);
@@ -220,7 +245,7 @@ ReliableDataRetrieval::onData(const ndn::Interest& interest, const ndn::Data& da
     onContentData(interest, data);
   }
 
-  if (segment == 0) // if it was the first Interest
+  /*if (segment == 0) // if it was the first Interest
   {
     // in a next round try to transmit all Interests, except the first one
     m_currentWindowSize = m_finalBlockNumber;
@@ -268,7 +293,7 @@ ReliableDataRetrieval::onData(const ndn::Interest& interest, const ndn::Data& da
         }
       }
     }
-  }
+  }*/
 }
 
 void
