@@ -102,6 +102,7 @@ ReliableDataRetrieval::start()
 
   //send exactly 1 Interest to get the FinalBlockId
   m_context->getContextOption(FINAL_BLOCK_ID, m_finalBlockNumber);
+  m_isFinalBlockNumberDiscovered = true;
   m_currentWindowSize = m_finalBlockNumber;
   int maxWindowSize = -1;
   m_context->getContextOption(MAX_WINDOW_SIZE, maxWindowSize);
@@ -116,6 +117,7 @@ ReliableDataRetrieval::start()
       if (m_isFinalBlockNumberDiscovered) {
         if (m_segNumber <= m_finalBlockNumber) {
           sendInterest();
+          //std::cout << "SENDIN" <<std::endl;
         }
         else {
           break;
@@ -158,7 +160,7 @@ ReliableDataRetrieval::sendInterest()
   prefix.appendSegment(m_segNumber);
 
   Interest interest(prefix);
-  std::cout << "Sending Interest" << interest.getName() << std::endl;
+  //std::cout << "Sending Interest" << interest.getName() << std::endl;
 
   int interestLifetime = DEFAULT_INTEREST_LIFETIME_API;
   m_context->getContextOption(INTEREST_LIFETIME, interestLifetime);
@@ -398,7 +400,11 @@ ReliableDataRetrieval::retransmitFreshInterest(const ndn::Interest& interest)
       int interestLifetime = DEFAULT_INTEREST_LIFETIME_API;
       m_context->getContextOption(INTEREST_LIFETIME, interestLifetime);
       retxInterest.setInterestLifetime(time::milliseconds(interestLifetime));
-      retxInterest.setFunction(interest.getFunction());
+
+      Name functionAsName;
+      m_context->getContextOption(FUNCTION, functionAsName);
+      retxInterest.setFunction(Function(functionAsName.toUri()));
+
       SelectorHelper::applySelectors(retxInterest, m_context);
 
       retxInterest.setMustBeFresh(true); // to bypass cache
@@ -416,7 +422,7 @@ ReliableDataRetrieval::retransmitFreshInterest(const ndn::Interest& interest)
       ConsumerInterestCallback onInterestToLeaveContext = EMPTY_CALLBACK;
       m_context->getContextOption(INTEREST_LEAVE_CNTX, onInterestToLeaveContext);
       if (onInterestToLeaveContext != EMPTY_CALLBACK) {
-        onInterestToLeaveContext(*dynamic_cast<Consumer*>(m_context), retxInterest);
+        //onInterestToLeaveContext(*dynamic_cast<Consumer*>(m_context), retxInterest);
       }
 
       // because user could stop the context in one of the prev callbacks
@@ -425,10 +431,10 @@ ReliableDataRetrieval::retransmitFreshInterest(const ndn::Interest& interest)
 
       m_interestsInFlight++;
       m_interestRetransmissions[segment]++;
-      m_expressedInterests[segment] = m_face->expressInterest(retxInterest,
+      /*m_expressedInterests[segment] = m_face->expressInterest(retxInterest,
                                                               bind(&ReliableDataRetrieval::onData, this, _1, _2),
                                                               bind(&ReliableDataRetrieval::onNack, this, _1, _2),
-                                                              bind(&ReliableDataRetrieval::onTimeout, this, _1));
+                                                              bind(&ReliableDataRetrieval::onTimeout, this, _1));*/
     }
   }
   else {
@@ -450,6 +456,10 @@ ReliableDataRetrieval::retransmitInterestWithExclude(const ndn::Interest& intere
     int interestLifetime = DEFAULT_INTEREST_LIFETIME_API;
     m_context->getContextOption(INTEREST_LIFETIME, interestLifetime);
     interestWithExlusion.setInterestLifetime(time::milliseconds(interestLifetime));
+
+    Name functionAsName;
+    m_context->getContextOption(FUNCTION, functionAsName);
+    interestWithExlusion.setFunction(Function(functionAsName.toUri()));
 
     SelectorHelper::applySelectors(interestWithExlusion, m_context);
 
@@ -476,7 +486,7 @@ ReliableDataRetrieval::retransmitInterestWithExclude(const ndn::Interest& intere
     ConsumerInterestCallback onInterestToLeaveContext = EMPTY_CALLBACK;
     m_context->getContextOption(INTEREST_LEAVE_CNTX, onInterestToLeaveContext);
     if (onInterestToLeaveContext != EMPTY_CALLBACK) {
-      onInterestToLeaveContext(*dynamic_cast<Consumer*>(m_context), interestWithExlusion);
+      //onInterestToLeaveContext(*dynamic_cast<Consumer*>(m_context), interestWithExlusion);
     }
 
     // because user could stop the context in one of the prev callbacks
@@ -486,10 +496,10 @@ ReliableDataRetrieval::retransmitInterestWithExclude(const ndn::Interest& intere
     //retransmit
     m_interestsInFlight++;
     m_interestRetransmissions[segment]++;
-    m_expressedInterests[segment] = m_face->expressInterest(interestWithExlusion,
+    /*m_expressedInterests[segment] = m_face->expressInterest(interestWithExlusion,
                                                             bind(&ReliableDataRetrieval::onData, this, _1, _2),
                                                             bind(&ReliableDataRetrieval::onNack, this, _1, _2),
-                                                            bind(&ReliableDataRetrieval::onTimeout, this, _1));
+                                                            bind(&ReliableDataRetrieval::onTimeout, this, _1));*/
   }
   else {
     m_isRunning = false;
@@ -535,7 +545,7 @@ ReliableDataRetrieval::retransmitInterestWithDigest(const ndn::Interest& interes
     ConsumerInterestCallback onInterestToLeaveContext = EMPTY_CALLBACK;
     m_context->getContextOption(INTEREST_LEAVE_CNTX, onInterestToLeaveContext);
     if (onInterestToLeaveContext != EMPTY_CALLBACK) {
-      onInterestToLeaveContext(*dynamic_cast<Consumer*>(m_context), interestWithDigest);
+      //onInterestToLeaveContext(*dynamic_cast<Consumer*>(m_context), interestWithDigest);
     }
 
     // because user could stop the context in one of the prev callbacks
@@ -543,12 +553,12 @@ ReliableDataRetrieval::retransmitInterestWithDigest(const ndn::Interest& interes
       return false;
 
     //retransmit
-    m_interestsInFlight++;
+    /*m_interestsInFlight++;
     m_interestRetransmissions[segment]++;
     m_expressedInterests[segment] = m_face->expressInterest(interestWithDigest,
                                                             bind(&ReliableDataRetrieval::onData, this, _1, _2),
                                                             bind(&ReliableDataRetrieval::onNack, this, _1, _2),
-                                                            bind(&ReliableDataRetrieval::onTimeout, this, _1));
+                                                            bind(&ReliableDataRetrieval::onTimeout, this, _1));*/
   }
   else {
     m_isRunning = false;
@@ -801,7 +811,7 @@ ReliableDataRetrieval::onTimeout(const ndn::Interest& interest)
     ConsumerInterestCallback onInterestToLeaveContext = EMPTY_CALLBACK;
     m_context->getContextOption(INTEREST_LEAVE_CNTX, onInterestToLeaveContext);
     if (onInterestToLeaveContext != EMPTY_CALLBACK) {
-      onInterestToLeaveContext(*dynamic_cast<Consumer*>(m_context), retxInterest);
+      //onInterestToLeaveContext(*dynamic_cast<Consumer*>(m_context), retxInterest);
     }
 
     // because user could stop the context in one of the prev callbacks
@@ -811,10 +821,10 @@ ReliableDataRetrieval::onTimeout(const ndn::Interest& interest)
     //retransmit
     m_interestsInFlight++;
     m_interestRetransmissions[segment]++;
-    m_expressedInterests[segment] = m_face->expressInterest(retxInterest,
+    /*m_expressedInterests[segment] = m_face->expressInterest(retxInterest,
                                                             bind(&ReliableDataRetrieval::onData, this, _1, _2),
                                                             bind(&ReliableDataRetrieval::onNack, this, _1, _2),
-                                                            bind(&ReliableDataRetrieval::onTimeout, this, _1));
+                                                            bind(&ReliableDataRetrieval::onTimeout, this, _1));*/
   }
   else {
     m_isRunning = false;
@@ -951,6 +961,9 @@ ReliableDataRetrieval::fastRetransmit(const ndn::Interest& interest, uint64_t se
     Interest retxInterest(name);
     SelectorHelper::applySelectors(retxInterest, m_context);
 
+    Name functionAsName;
+    m_context->getContextOption(FUNCTION, functionAsName);
+    retxInterest.setFunction(Function(functionAsName.toUri()));
     // this is to inherit the exclusions from the lost interest
     retxInterest.setExclude(interest.getExclude());
 
@@ -964,7 +977,7 @@ ReliableDataRetrieval::fastRetransmit(const ndn::Interest& interest, uint64_t se
     ConsumerInterestCallback onInterestToLeaveContext = EMPTY_CALLBACK;
     m_context->getContextOption(INTEREST_LEAVE_CNTX, onInterestToLeaveContext);
     if (onInterestToLeaveContext != EMPTY_CALLBACK) {
-      onInterestToLeaveContext(*dynamic_cast<Consumer*>(m_context), retxInterest);
+      //onInterestToLeaveContext(*dynamic_cast<Consumer*>(m_context), retxInterest);
     }
 
     // because user could stop the context in one of the prev callbacks
@@ -975,10 +988,10 @@ ReliableDataRetrieval::fastRetransmit(const ndn::Interest& interest, uint64_t se
     m_interestsInFlight++;
     m_interestRetransmissions[segNumber]++;
     //std::cout << "fast retx" << std::endl;
-    m_expressedInterests[segNumber] = m_face->expressInterest(retxInterest,
+    /*m_expressedInterests[segNumber] = m_face->expressInterest(retxInterest,
                                                               bind(&ReliableDataRetrieval::onData, this, _1, _2),
                                                               bind(&ReliableDataRetrieval::onNack, this, _1, _2),
-                                                              bind(&ReliableDataRetrieval::onTimeout, this, _1));
+                                                              bind(&ReliableDataRetrieval::onTimeout, this, _1));*/
   }
 }
 
