@@ -162,6 +162,7 @@ Producer::passSegmentThroughCallbacks(shared_ptr<Data> segment)
     }
 
     m_face->put(*segment);
+    std::cout << "passSegmentThroughCallbacks" << std::endl;
 
     if (m_isWritingToLocalRepo) {
       boost::system::error_code ec;
@@ -279,7 +280,7 @@ Producer::produce(Name suffix, const uint8_t* buf, size_t bufferSize)
 
   if (freeSpaceForContent * numberOfSegments < bufferSize)
     numberOfSegments++;
-    
+
   uint64_t currentSegment = 0;
   uint64_t initialSegment = currentSegment;
   uint64_t finalSegment = currentSegment;
@@ -567,11 +568,12 @@ void Producer::processIncomingInterest(/*const Name& name, const Interest& inter
           m_onInterestSatisfiedFromSndBuffer(*this, *interest);
         }
 
-        if (m_onDataLeavesContext != EMPTY_CALLBACK) {
+        /*if (m_onDataLeavesContext != EMPTY_CALLBACK) {
           m_onDataLeavesContext(*this, *const_cast<Data*>(data));
         }
 
         m_face->put(*data);
+        std::cout << "process incoming Interest" << std::endl;*/
       }
       else {
         if (m_onInterestProcess != EMPTY_CALLBACK) {
