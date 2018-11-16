@@ -429,9 +429,9 @@ ReliableDataRetrieval::retransmitFreshInterest(const ndn::Interest& interest)
       if (m_isRunning == false)
         return;
 
-      m_interestsInFlight++;
+      /*m_interestsInFlight++;
       m_interestRetransmissions[segment]++;
-      /*m_expressedInterests[segment] = m_face->expressInterest(retxInterest,
+      m_expressedInterests[segment] = m_face->expressInterest(retxInterest,
                                                               bind(&ReliableDataRetrieval::onData, this, _1, _2),
                                                               bind(&ReliableDataRetrieval::onNack, this, _1, _2),
                                                               bind(&ReliableDataRetrieval::onTimeout, this, _1));*/
@@ -494,9 +494,9 @@ ReliableDataRetrieval::retransmitInterestWithExclude(const ndn::Interest& intere
       return false;
 
     //retransmit
-    m_interestsInFlight++;
+    /*m_interestsInFlight++;
     m_interestRetransmissions[segment]++;
-    /*m_expressedInterests[segment] = m_face->expressInterest(interestWithExlusion,
+    m_expressedInterests[segment] = m_face->expressInterest(interestWithExlusion,
                                                             bind(&ReliableDataRetrieval::onData, this, _1, _2),
                                                             bind(&ReliableDataRetrieval::onNack, this, _1, _2),
                                                             bind(&ReliableDataRetrieval::onTimeout, this, _1));*/
@@ -724,7 +724,15 @@ ReliableDataRetrieval::onContentData(const ndn::Interest& interest, const ndn::D
 
     if (!data.getFinalBlockId().empty()) {
       m_isFinalBlockNumberDiscovered = true;
-      m_finalBlockNumber = data.getFinalBlockId().toSegment();
+      uint64_t tmp_finalBlockNumber = data.getFinalBlockId().toSegment();
+      if(tmp_finalBlockNumber > m_finalBlockNumber)
+      {
+        while(m_segNumber <= tmp_finalBlockNumber)
+        {
+          sendInterest();
+        }
+      }
+      m_finalBlockNumber = tmp_finalBlockNumber;
     }
 
     m_receiveBuffer[data.getName().get(-1).toSegment()] = data.shared_from_this();
@@ -819,9 +827,9 @@ ReliableDataRetrieval::onTimeout(const ndn::Interest& interest)
       return;
 
     //retransmit
-    m_interestsInFlight++;
+    /*m_interestsInFlight++;
     m_interestRetransmissions[segment]++;
-    /*m_expressedInterests[segment] = m_face->expressInterest(retxInterest,
+    m_expressedInterests[segment] = m_face->expressInterest(retxInterest,
                                                             bind(&ReliableDataRetrieval::onData, this, _1, _2),
                                                             bind(&ReliableDataRetrieval::onNack, this, _1, _2),
                                                             bind(&ReliableDataRetrieval::onTimeout, this, _1));*/
@@ -985,10 +993,10 @@ ReliableDataRetrieval::fastRetransmit(const ndn::Interest& interest, uint64_t se
       return;
 
     //retransmit
-    m_interestsInFlight++;
+    /*m_interestsInFlight++;
     m_interestRetransmissions[segNumber]++;
     //std::cout << "fast retx" << std::endl;
-    /*m_expressedInterests[segNumber] = m_face->expressInterest(retxInterest,
+    m_expressedInterests[segNumber] = m_face->expressInterest(retxInterest,
                                                               bind(&ReliableDataRetrieval::onData, this, _1, _2),
                                                               bind(&ReliableDataRetrieval::onNack, this, _1, _2),
                                                               bind(&ReliableDataRetrieval::onTimeout, this, _1));*/
