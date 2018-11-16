@@ -238,7 +238,7 @@ Producer::getFinalBlockIdFromBufferSize(Name contentName, size_t bufferSize)
 
   int signatureSize = 32; //SHA_256 as default
 
-  int freeSpaceForContent = m_dataPacketSize - bytesOccupiedByName - signatureSize - m_keyLocatorSize - DEFAULT_SAFETY_OFFSET;
+  int freeSpaceForContent = DEFAULT_DATA_PACKET_SIZE - bytesOccupiedByName - signatureSize - DEFAULT_KEY_LOCATOR_SIZE - DEFAULT_SAFETY_OFFSET;
 
 
   int numberOfSegments = bufferSize / freeSpaceForContent;
@@ -251,8 +251,71 @@ Producer::getFinalBlockIdFromBufferSize(Name contentName, size_t bufferSize)
 
   return numberOfSegments-1;
 }
-// this can be called either from the thread of the caller
-// or from the m_listeningThread
+
+std::map<uint64_t, shared_ptr<Data>>
+Producer::getDataSegmentMap(Name suffix, const uint8_t* buf, size_t bufferSize)
+{
+  std::map<uint64_t, shared_ptr<Data>> dataBuffer;
+
+  int bytesPackaged = 0;
+
+  Name name(m_prefix);
+  if (!suffix.empty()) {
+    name.append(suffix);
+  }
+
+  Block nameOnWire = name.wireEncode();
+  size_t bytesOccupiedByName = nameOnWire.size();
+
+  int signatureSize = 32; //SHA_256 as default
+
+  int freeSpaceForContent = m_dataPacketSize - bytesOccupiedByName - signatureSize - m_keyLocatorSize - DEFAULT_SAFETY_OFFSET;
+
+  int numberOfSegments = bufferSize / freeSpaceForContent;
+
+  if (numberOfSegments == 0)
+    numberOfSegments++;
+
+  if (freeSpaceForContent * numberOfSegments < bufferSize)
+    numberOfSegments++;
+
+  uint64_t currentSegment = 0;
+  uint64_t initialSegment = currentSegment;
+  uint64_t finalSegment = currentSegment;
+
+  uint64_t i = 0;
+  for (i = currentSegment; i < numberOfSegments + currentSegment; i++) {
+    Name fullName(m_prefix);
+    if (!suffix.empty())
+      fullName.append(suffix);
+
+    fullName.appendSegment(i);
+
+    shared_ptr<Data> data = make_shared<Data>(fullName);
+    data->setFreshnessPeriod(time::milliseconds(m_dataFreshness));
+
+    data->setFinalBlockId(name::Component::fromSegment(numberOfSegments + currentSegment - 1));
+
+    if (i == numberOfSegments + currentSegment - 1) // last segment
+    {
+      data->setContent(&buf[bytesPackaged], bufferSize - bytesPackaged);
+      bytesPackaged += bufferSize - bytesPackaged;
+    }
+    else {
+      data->setContent(&buf[bytesPackaged], freeSpaceForContent);
+      bytesPackaged += freeSpaceForContent;
+    }
+
+    m_keyChain.sign(*data, signingWithSha256());
+
+    dataBuffer[i] = data;
+    //passSegmentThroughCallbacks(data);
+  }
+
+  finalSegment = i;
+  return dataBuffer;
+}
+
 void
 Producer::produce(Name suffix, const uint8_t* buf, size_t bufferSize)
 {
@@ -558,7 +621,8 @@ void Producer::processIncomingInterest(/*const Name& name, const Interest& inter
       {
         if (m_onInterestToVerify(const_cast<Interest&>(interest)) == false)
         {
-          // produceNACK
+          // produceNACK  if (m_isMakingManifest) // segmentation with inlined manifests
+
         }
       }*/
 
@@ -630,6 +694,7 @@ Producer::setContextOption(int optionName, int optionValue)
         m_signatureType = SHA_256;
       else
         m_signatureType = optionValue;
+  if (m_isMakingManifest) // segmentation with inlined manifests
 
       if (m_signatureType == SHA_256)
         m_signatureSize = 32;
@@ -643,7 +708,8 @@ Producer::setContextOption(int optionName, int optionValue)
     case INFOMAX_PRIORITY:
       m_infomaxType = optionValue;
 
-    case INTEREST_ENTER_CNTX:
+    case INTEREST_ENTER_CNTX:  if (m_isMakingManifest) // segmentation with inlined manifests
+
       if (optionValue == EMPTY_CALLBACK) {
         m_onInterestEntersContext = EMPTY_CALLBACK;
         return OPTION_VALUE_SET;
@@ -657,7 +723,8 @@ Producer::setContextOption(int optionName, int optionValue)
 
     case INTEREST_PASS_RCV_BUF:
       if (optionValue == EMPTY_CALLBACK) {
-        m_onInterestPassedRcvBuffer = EMPTY_CALLBACK;
+        m_onInterestPassedRcvBuffer = EMPTY_CALLBACK;  if (m_isMakingManifest) // segmentation with inlined manifests
+
         return OPTION_VALUE_SET;
       }
 
@@ -668,7 +735,8 @@ Producer::setContextOption(int optionName, int optionValue)
       }
 
     case CACHE_MISS:
-      if (optionValue == EMPTY_CALLBACK) {
+      if (optionValue == EMPTY_CALLBACK) {  if (m_isMakingManifest) // segmentation with inlined manifests
+
         m_onInterestProcess = EMPTY_CALLBACK;
         return OPTION_VALUE_SET;
       }
@@ -689,7 +757,8 @@ Producer::setContextOption(int optionName, int optionValue)
       if (optionValue == EMPTY_CALLBACK) {
         m_onDataInSndBuffer = EMPTY_CALLBACK;
         return OPTION_VALUE_SET;
-      }
+      }  if (m_isMakingManifest) // segmentation with inlined manifests
+
 
     case DATA_LEAVE_CNTX:
       if (optionValue == EMPTY_CALLBACK) {
@@ -720,7 +789,8 @@ Producer::setContextOption(int optionName, bool optionValue)
 
       if (optionValue == true) {
         boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address_v4::from_string("127.0.0.1"), 1000);
-        boost::system::error_code ec;
+        boost::system::error_code ec;  if (m_isMakingManifest) // segmentation with inlined manifests
+
         m_repoSocket.connect(ep, ec);
 
         if (ec) {
