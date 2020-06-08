@@ -162,7 +162,7 @@ Producer::passSegmentThroughCallbacks(shared_ptr<Data> segment)
     }
 
     m_face->put(*segment);
-    std::cout << "passSegmentThroughCallbacks" << std::endl;
+    //std::cout << "passSegmentThroughCallbacks" << std::endl;
 
     if (m_isWritingToLocalRepo) {
       boost::system::error_code ec;
