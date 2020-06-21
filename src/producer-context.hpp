@@ -95,7 +95,7 @@ public:
   produce(Name suffix, const uint8_t* buffer, size_t bufferSize);
 
   static int
-  getFinalBlockIdFromBufferSize(Name suffix, size_t bufferSize);
+  getFinalBlockIdFromBufferSize(Name suffix, Name function, size_t bufferSize);
 
   std::map<uint64_t, shared_ptr<Data>>
   getDataSegmentMap(Name suffix, const uint8_t* buf, size_t bufferSize);

@@ -225,7 +225,7 @@ Producer::produce(Data& packet)
 }
 
 int
-Producer::getFinalBlockIdFromBufferSize(Name contentName, size_t bufferSize)
+Producer::getFinalBlockIdFromBufferSize(Name contentName, Name functionName, size_t bufferSize)
 {
   if (bufferSize == 0)
     return 0;
@@ -236,9 +236,13 @@ Producer::getFinalBlockIdFromBufferSize(Name contentName, size_t bufferSize)
   Block nameOnWire = name.wireEncode();
   size_t bytesOccupiedByName = nameOnWire.size();
 
+  Function funcname(functionName.toUri());
+  Block functionOnWire = funcname.wireEncode();
+  size_t bytesOccupiedByFunction = functionOnWire.size();
+
   int signatureSize = 32; //SHA_256 as default
 
-  int freeSpaceForContent = DEFAULT_DATA_PACKET_SIZE - bytesOccupiedByName - signatureSize - DEFAULT_KEY_LOCATOR_SIZE - DEFAULT_SAFETY_OFFSET;
+  int freeSpaceForContent = DEFAULT_DATA_PACKET_SIZE - bytesOccupiedByName - bytesOccupiedByFunction - signatureSize - DEFAULT_KEY_LOCATOR_SIZE - DEFAULT_SAFETY_OFFSET;
 
 
   int numberOfSegments = bufferSize / freeSpaceForContent;
@@ -267,9 +271,14 @@ Producer::getDataSegmentMap(Name suffix, const uint8_t* buf, size_t bufferSize)
   Block nameOnWire = name.wireEncode();
   size_t bytesOccupiedByName = nameOnWire.size();
 
+  Function funcname("/");
+
+  Block functionOnWire = funcname.wireEncode();
+  size_t bytesOccupiedByFuncName = functionOnWire.size();
+
   int signatureSize = 32; //SHA_256 as default
 
-  int freeSpaceForContent = m_dataPacketSize - bytesOccupiedByName - signatureSize - m_keyLocatorSize - DEFAULT_SAFETY_OFFSET;
+  int freeSpaceForContent = m_dataPacketSize - bytesOccupiedByName - bytesOccupiedByFuncName - signatureSize - m_keyLocatorSize - DEFAULT_SAFETY_OFFSET;
 
   int numberOfSegments = bufferSize / freeSpaceForContent;
 
@@ -292,6 +301,7 @@ Producer::getDataSegmentMap(Name suffix, const uint8_t* buf, size_t bufferSize)
     fullName.appendSegment(i);
 
     shared_ptr<Data> data = make_shared<Data>(fullName);
+    data->setFunction(Function("/"));
     data->setFreshnessPeriod(time::milliseconds(m_dataFreshness));
 
     data->setFinalBlockId(name::Component::fromSegment(numberOfSegments + currentSegment - 1));
@@ -332,9 +342,14 @@ Producer::produce(Name suffix, const uint8_t* buf, size_t bufferSize)
   Block nameOnWire = name.wireEncode();
   size_t bytesOccupiedByName = nameOnWire.size();
 
+  Function funcname("/");
+
+  Block functionOnWire = funcname.wireEncode();
+  size_t bytesOccupiedByFuncName = functionOnWire.size();
+
   int signatureSize = 32; //SHA_256 as default
 
-  int freeSpaceForContent = m_dataPacketSize - bytesOccupiedByName - signatureSize - m_keyLocatorSize - DEFAULT_SAFETY_OFFSET;
+  int freeSpaceForContent = m_dataPacketSize - bytesOccupiedByName - bytesOccupiedByFuncName - signatureSize - m_keyLocatorSize - DEFAULT_SAFETY_OFFSET;
 
   int numberOfSegments = bufferSize / freeSpaceForContent;
 
@@ -384,6 +399,7 @@ Producer::produce(Name suffix, const uint8_t* buf, size_t bufferSize)
       fullName.appendSegment(currentSegment);
 
       dataSegment = make_shared<Data>(fullName);
+      dataSegment->setFunction(Function("/"));
       dataSegment->setFreshnessPeriod(time::milliseconds(m_dataFreshness));
       finalSegment = currentSegment;
 
