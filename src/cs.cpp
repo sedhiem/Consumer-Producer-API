@@ -55,6 +55,12 @@ Cs::~Cs()
   }
 }
 
+void
+Cs::OneErase()
+{
+    evictItem();
+}
+
 size_t
 Cs::size() const
 {

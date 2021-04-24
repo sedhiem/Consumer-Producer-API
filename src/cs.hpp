@@ -80,6 +80,9 @@ public:
 
   ~Cs();
 
+  void
+  OneErase();
+
   /** \brief inserts a Data packet
    *  This method does not consider the payload of the Data packet.
    *

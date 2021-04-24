@@ -101,7 +101,8 @@ ReliableDataRetrieval::start()
   }*/
 
   //send exactly 1 Interest to get the FinalBlockId
-  m_context->getContextOption(FINAL_BLOCK_ID, m_finalBlockNumber);
+  sendInterest();
+  /*m_context->getContextOption(FINAL_BLOCK_ID, m_finalBlockNumber);
   m_isFinalBlockNumberDiscovered = true;
   m_currentWindowSize = m_finalBlockNumber;
   int maxWindowSize = -1;
@@ -127,7 +128,7 @@ ReliableDataRetrieval::start()
         sendInterest();
       }
     }
-  }
+    }*/
 
   bool isAsync = false;
   m_context->getContextOption(ASYNC_MODE, isAsync);
@@ -144,6 +145,9 @@ ReliableDataRetrieval::start()
 void
 ReliableDataRetrieval::sendInterest()
 {
+  int erasecache;
+  m_context->getContextOption(EraseCache, erasecache);
+  
   Name prefix;
   m_context->getContextOption(PREFIX, prefix);
 
@@ -166,6 +170,8 @@ ReliableDataRetrieval::sendInterest()
   m_context->getContextOption(INTEREST_LIFETIME, interestLifetime);
   interest.setInterestLifetime(time::milliseconds(interestLifetime));
   interest.setFunction(Function(functionAsName.toUri()));
+
+  interest.setEraseCache((uint)erasecache);
 
   SelectorHelper::applySelectors(interest, m_context);
 
@@ -216,6 +222,9 @@ ReliableDataRetrieval::onData(const ndn::Interest& interest, const ndn::Data& da
     RttEstimator::Duration rto = m_rttEstimator.computeRto();
     boost::chrono::milliseconds lifetime = boost::chrono::duration_cast<boost::chrono::milliseconds>(rto);
 
+    //int erasecache;
+    //m_context->getContextOption(EraseCache, erasecache);
+    
     int interestLifetime = DEFAULT_INTEREST_LIFETIME_API;
     m_context->getContextOption(INTEREST_LIFETIME, interestLifetime);
 
@@ -247,7 +256,7 @@ ReliableDataRetrieval::onData(const ndn::Interest& interest, const ndn::Data& da
     onContentData(interest, data);
   }
 
-  /*if (segment == 0) // if it was the first Interest
+  if (segment == 0) // if it was the first Interest
   {
     // in a next round try to transmit all Interests, except the first one
     m_currentWindowSize = m_finalBlockNumber;
@@ -295,7 +304,7 @@ ReliableDataRetrieval::onData(const ndn::Interest& interest, const ndn::Data& da
         }
       }
     }
-  }*/
+  }
 }
 
 void
@@ -405,6 +414,10 @@ ReliableDataRetrieval::retransmitFreshInterest(const ndn::Interest& interest)
       m_context->getContextOption(FUNCTION, functionAsName);
       retxInterest.setFunction(Function(functionAsName.toUri()));
 
+      //int erasecache;
+      //m_context->getContextOption(EraseCache, erasecache);
+      //retxInterest.setEraseCache((uint)erasecache);
+
       SelectorHelper::applySelectors(retxInterest, m_context);
 
       retxInterest.setMustBeFresh(true); // to bypass cache
@@ -460,6 +473,10 @@ ReliableDataRetrieval::retransmitInterestWithExclude(const ndn::Interest& intere
     Name functionAsName;
     m_context->getContextOption(FUNCTION, functionAsName);
     interestWithExlusion.setFunction(Function(functionAsName.toUri()));
+
+    //uint32_t erasecache;
+    //m_context->getContextOption(EraseCache, erasecache);
+    //interestWithExlusion.setEraseCache((uint)erasecache);
 
     SelectorHelper::applySelectors(interestWithExlusion, m_context);
 
@@ -804,6 +821,8 @@ ReliableDataRetrieval::onTimeout(const ndn::Interest& interest)
     retxInterest.setInterestLifetime(time::milliseconds(interestLifetime));
     retxInterest.setFunction(interest.getFunction());
 
+    //retxInterest.setEraseCache(interest.getEraseCache());
+
     SelectorHelper::applySelectors(retxInterest, m_context);
 
     // this is to inherit the exclusions from the timed out interest
@@ -972,6 +991,10 @@ ReliableDataRetrieval::fastRetransmit(const ndn::Interest& interest, uint64_t se
     Name functionAsName;
     m_context->getContextOption(FUNCTION, functionAsName);
     retxInterest.setFunction(Function(functionAsName.toUri()));
+
+    //uint32_t erasecache;
+    //m_context->getContextOption(EraseCache, erasecache);
+    //retxInterest.setEraseCache((uint)erasecache);
     // this is to inherit the exclusions from the lost interest
     retxInterest.setExclude(interest.getExclude());
 

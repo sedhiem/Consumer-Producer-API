@@ -217,6 +217,7 @@ private:
   int m_interestLifetimeMillisec;
 
   uint64_t m_finalBlockId;
+  int m_erasecache;
   int m_minWindowSize;
   int m_maxWindowSize;
   int m_currentWindowSize;

@@ -40,6 +40,9 @@ SimpleDataRetrieval::start()
 void
 SimpleDataRetrieval::sendInterest()
 {
+  int erasecache;
+  m_context->getContextOption(EraseCache, erasecache);
+  
   Name prefix;
   m_context->getContextOption(PREFIX, prefix);
 

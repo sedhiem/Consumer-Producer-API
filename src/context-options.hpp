@@ -54,6 +54,7 @@
 
 #define FUNCTION 28 //define Function as Name
 #define FINAL_BLOCK_ID 29 //FinalBlockId
+#define EraseCache 30 //EraseCache
 
 // selectors
 #define MIN_SUFFIX_COMP_S 101 // int
